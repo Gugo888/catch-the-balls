@@ -1,0 +1,31 @@
+<form
+  [formGroup]="settingsForm"
+  (ngSubmit)="onSubmit()"
+  style="display: flex; justify-content: space-evenly"
+>
+  <div>
+    <label for="fallingSpeed">Falling Speed:</label>
+    <input id="fallingSpeed" formControlName="fallingSpeed" type="number" />
+  </div>
+
+  <div>
+    <label for="fallingFrequency">Falling Frequency (ms):</label>
+    <input
+      id="fallingFrequency"
+      formControlName="fallingFrequency"
+      type="number"
+    />
+  </div>
+
+  <div>
+    <label for="playerSpeed">Player Speed:</label>
+    <input id="playerSpeed" formControlName="playerSpeed" type="number" />
+  </div>
+
+  <div>
+    <label for="gameTime">Game Time (sec):</label>
+    <input id="gameTime" formControlName="gameTime" type="number" />
+  </div>
+
+  <button type="submit" [disabled]="settingsForm.invalid">Start Game</button>
+</form>

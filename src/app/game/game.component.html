@@ -1,0 +1,23 @@
+<div class="game-container">
+  <div class="player" [ngStyle]="{ left: playerPosition + 'px' }"></div>
+
+  <div
+    *ngFor="let object of fallingObjects"
+    class="falling-object"
+    [ngStyle]="{
+      left: object.x + 'px',
+      top: object.y + 'px',
+      backgroundColor: object.color
+    }"
+    [attr.data-id]="object.id"
+  ></div>
+
+  <div class="hud">
+    <p>Time: {{ timeRemaining }}</p>
+    <p>Caught: {{ caughtObjects }}</p>
+  </div>
+
+  <button *ngIf="gameOver" class="restart-button" (click)="restartGame()">
+    Restart Game
+  </button>
+</div>

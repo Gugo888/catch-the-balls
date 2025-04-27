@@ -1,6 +1,16 @@
 # CatchTheBalls
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 14.2.9.
+This is a simple Angular game where the player controls a character to catch falling balls. The game is built using Angular and RxJS to handle game state updates.
+
+## Game Instructions
+- Use the left and right arrow keys to move the player character.
+- Catch as many balls as you can before the time runs out!
+
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Gugo888/catch-the-balls.git
 
 ## Development server
 
