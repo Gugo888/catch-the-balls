@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { GameSettings } from './shared/models/game.model';
 
 @Component({
   selector: 'app-root',
@@ -6,13 +7,18 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'catch-the-balls';
-  gameStarted = false;
-  gameSettings: any;
+  gameStarted: boolean = false;
+  gameSettings!: GameSettings;
 
-  startGame(settings: any) {
-    console.log(settings,'settings')
+  startGame(settings: GameSettings) {
+    this.gameSettings = settings;
     this.gameStarted = true;
-    this.gameSettings = settings; // Обновляем настройки игры  }
   }
+
+  updateSettings(settings: GameSettings) {
+    if (this.gameStarted) {
+      this.gameSettings = settings;
+    }
+  }
+
 }

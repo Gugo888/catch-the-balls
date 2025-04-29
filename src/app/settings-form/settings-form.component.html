@@ -1,31 +1,23 @@
-<form
-  [formGroup]="settingsForm"
-  (ngSubmit)="onSubmit()"
-  style="display: flex; justify-content: space-evenly"
->
-  <div>
+<form [formGroup]="settingsForm" (ngSubmit)="onSubmit()">
+  <div class="column">
     <label for="fallingSpeed">Falling Speed:</label>
-    <input id="fallingSpeed" formControlName="fallingSpeed" type="number" />
+    <input placeholder="1 - 10"  id="fallingSpeed" formControlName="fallingSpeed" type="number" (keydown)="allowOnlyPositiveIntegers($event)"/>
   </div>
 
-  <div>
+  <div class="column">
     <label for="fallingFrequency">Falling Frequency (ms):</label>
-    <input
-      id="fallingFrequency"
-      formControlName="fallingFrequency"
-      type="number"
-    />
+    <input placeholder="100 - 5000"  id="fallingFrequency" formControlName="fallingFrequency" type="number" (keydown)="allowOnlyPositiveIntegers($event)"/>
   </div>
 
-  <div>
+  <div class="column">
     <label for="playerSpeed">Player Speed:</label>
-    <input id="playerSpeed" formControlName="playerSpeed" type="number" />
+    <input placeholder="1 - 10"  id="playerSpeed" formControlName="playerSpeed" type="number" (keydown)="allowOnlyPositiveIntegers($event)"/>
   </div>
 
-  <div>
+  <div class="column">
     <label for="gameTime">Game Time (sec):</label>
-    <input id="gameTime" formControlName="gameTime" type="number" />
+    <input id="gameTime" formControlName="gameTime" type="number" (keydown)="allowOnlyPositiveIntegers($event)"/>
   </div>
 
-  <button type="submit" [disabled]="settingsForm.invalid">Start Game</button>
+  <button *ngIf="!startClicked" type="submit">Start Game</button>
 </form>

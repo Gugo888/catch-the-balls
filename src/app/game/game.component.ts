@@ -1,6 +1,8 @@
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, SimpleChanges } from '@angular/core';
 import { Subscription, timer, of } from 'rxjs';
 import { switchMap, takeUntil } from 'rxjs/operators';
+import { GameStateService } from '../shared/services/game-state.service';
+import { GameSettings } from '../shared/models/game.model';
 
 @Component({
   selector: 'app-game',
@@ -8,28 +10,74 @@ import { switchMap, takeUntil } from 'rxjs/operators';
   styleUrls: ['./game.component.scss']
 })
 export class GameComponent implements OnInit, OnDestroy {
-  @Input() gameSettings: any;
+  @Input() gameSettings!: GameSettings;
 
-  playerPosition = 200;
-  playerWidth = 90;
-  gameTime = 30;
-  fallingSpeed = 5;
-  fallingFrequency = 1000; // Меньше значение — быстрее появляется новый шарик
-  timeRemaining = this.gameTime;
-  gameOver = false;
-  caughtObjects = 0;
+  playerPosition: number = 200;
+  playerWidth: number = 90;
+  
+  gameTime: number = 0;
+  fallingSpeed: number = 0;
+  fallingFrequency: number = 0;
+
+  timeRemaining:number = this.gameTime;
+  gameOver: boolean = false;
+  caughtObjects: number = 0;
   fallingObjects: { x: number, y: number, id: number, color: string }[] = [];
-  nextObjectId = 0;
+  nextObjectId:number = 0;
 
   gameSubscription: Subscription = new Subscription();
   timerSubscription: Subscription = new Subscription();
   objectMoveSubscription: Subscription = new Subscription();
 
+  constructor(private gameStateService: GameStateService) { }
+
   ngOnInit() {
     if (this.gameSettings) {
       this.startGame();
       window.addEventListener('keydown', this.handlePlayerMovement.bind(this));
+    };
+    this.gameStateService.gameState$.subscribe(state => {
+      this.caughtObjects = state.caughtObjects;
+      this.timeRemaining = state.timeRemaining;
+
+      if (this.timeRemaining === 0 && !this.gameOver) {
+        this.endGame();
+      }
+    });
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['gameSettings'] && this.gameSettings) {
+      const prevSettings = changes['gameSettings'].previousValue;
+      const currentSettings = changes['gameSettings'].currentValue;
+  
+      if (!prevSettings) return;
+  
+      if (prevSettings.gameTime !== currentSettings.gameTime) {
+        this.endGame();
+        this.gameTime = currentSettings.gameTime;
+        this.timeRemaining = this.gameTime;
+        this.startGame();
+        return;
+      }
+  
+      this.fallingSpeed = currentSettings.fallingSpeed || this.fallingSpeed;
+      const newFrequency = currentSettings.fallingFrequency || this.fallingFrequency;
+      if (newFrequency !== this.fallingFrequency) {
+        this.fallingFrequency = newFrequency;
+  
+        if (this.gameSubscription) {
+          this.gameSubscription.unsubscribe();
+        }
+        if (!this.gameOver) {
+          this.startSpawning();
+        }
+      }
     }
+  }
+
+  isGameRunning() {
+    return !this.gameOver && this.timeRemaining !== this.gameTime;
   }
 
   getRandomColor() {
@@ -42,30 +90,27 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   startGame() {
+    if (!this.gameSettings) return;
+  
     this.gameOver = false;
     this.fallingObjects = [];
     this.caughtObjects = 0;
+  
+    this.gameTime = this.gameSettings.gameTime;
     this.timeRemaining = this.gameTime;
-
-    this.startTimer();
+    this.fallingSpeed = this.gameSettings.fallingSpeed;
+    this.fallingFrequency = this.gameSettings.fallingFrequency;
+  
+    this.gameStateService.startGame(this.gameTime);
+  
     this.startSpawning();
     this.startObjectMovement();
-  }
-
-  startTimer() {
-    this.timerSubscription = timer(0, 1000).subscribe(() => {
-      if (this.timeRemaining > 0) {
-        this.timeRemaining--;
-      } else {
-        this.endGame();
-      }
-    });
   }
 
   startSpawning() {
     const spawnObject$ = timer(0, this.fallingFrequency).pipe(
       switchMap(() => {
-        const xPosition = Math.random() * (400 - 20);  // генерируем x, чтобы шарик не выходил за пределы
+        const xPosition = Math.random() * (400 - 20);
         return of({ x: xPosition, y: 0, id: this.nextObjectId++, color: this.getRandomColor() });
       }),
       takeUntil(timer(this.gameTime * 1000))
@@ -79,7 +124,6 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   startObjectMovement() {
-    // Двигаем объекты каждую 1/60 секунды (60 FPS)
     this.objectMoveSubscription = timer(0, 1000 / 60).subscribe(() => {
       if (!this.gameOver) {
         this.moveObjects();
@@ -89,7 +133,7 @@ export class GameComponent implements OnInit, OnDestroy {
 
   moveObjects() {
     this.fallingObjects.forEach(object => {
-      object.y += this.fallingSpeed;  // Увеличиваем координату y, чтобы объекты падали
+      object.y += this.fallingSpeed;
     });
 
     this.checkCollisions();
@@ -102,18 +146,18 @@ export class GameComponent implements OnInit, OnDestroy {
       const playerRight = this.playerPosition + this.playerWidth;
 
       if (
-        object.y >= 350 &&  // Падение на землю
-        object.x + 15 >= playerLeft && object.x <= playerRight  // Проверка на ловлю
+        object.y >= 350 &&
+        object.x + 15 >= playerLeft && object.x <= playerRight
       ) {
-        this.caughtObjects++;
-        return false; // Удаляем объект из массива, если он пойман
+        this.gameStateService.catchObject();
+        return false;
       }
       return true;
     });
   }
 
   removeInvisibleObjects() {
-    this.fallingObjects = this.fallingObjects.filter(object => object.y <= 400); // Убираем объекты, которые вышли за пределы экрана
+    this.fallingObjects = this.fallingObjects.filter(object => object.y <= 400);
   }
 
   handlePlayerMovement(event: KeyboardEvent) {
@@ -133,6 +177,8 @@ export class GameComponent implements OnInit, OnDestroy {
 
   endGame() {
     this.gameOver = true;
+    this.gameStateService.stopGame();
+
     if (this.timerSubscription) {
       this.timerSubscription.unsubscribe();
     }

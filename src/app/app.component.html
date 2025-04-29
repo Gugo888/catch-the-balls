@@ -1,2 +1,9 @@
-<app-settings-form (startGame)="startGame($event)"></app-settings-form>
-<app-game *ngIf="gameStarted" [gameSettings]="gameSettings"></app-game>
+<app-settings-form 
+  (startGame)="startGame($event)"
+  (settingsChanged)="updateSettings($event)"
+></app-settings-form>
+
+<app-game 
+  *ngIf="gameStarted" 
+  [gameSettings]="gameSettings"
+></app-game>
